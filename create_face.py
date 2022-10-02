@@ -1,5 +1,4 @@
-from concurrent.futures import process
-from ctypes import resize
+
 import os
 from random import sample
 import sys
@@ -50,25 +49,43 @@ def scrape_images():
 
     images = []
 
-    url = "https://www.google.com.au/search?q=nicholas+cage&hl=en&authuser=0&tbm=isch&sxsrf=ALiCzsabPB2SqxnuojRckEReLevgFJSEvQ%3A1664624939763&source=hp&biw=2176&bih=1100&ei=Kyk4Y9DuK7zF4-EPrMGo4Ak&iflsig=AJiK0e8AAAAAYzg3O2parGsNUGtq6K3DxEc-lNQxEo1-&ved=0ahUKEwiQsN2R-776AhW84jgGHawgCpwQ4dUDCAY&uact=5&oq=nicholas+cage&gs_lcp=CgNpbWcQAzIFCAAQgAQyBQgAEIAEMgUIABCABDIFCAAQgAQyBQgAEIAEMgUIABCABDIFCAAQgAQyBQgAEIAEMgUIABCABDIFCAAQgAQ6CAgAEIAEELEDOgsIABCABBCxAxCDAToICAAQsQMQgwE6BAgAEANQ5gRYyRVgtxZoAnAAeACAAcsBiAH6EJIBBjAuMTEuMpgBAKABAaoBC2d3cy13aXotaW1nsAEA&sclient=img"
-    html = requests.get(url)
-    soup = BeautifulSoup(html.content, 'html.parser')
+    #TODO: This is gross, fix lol
 
-    image_tags = soup.find_all('img')
-    links = []
-    for image_tag in image_tags:
-        links.append(image_tag['src'])
+    urls = ["https://www.google.com/search?q=nicolas%20cage&tbm=isch&hl=en&tbs=ic:specific%2Cisc:red&client=firefox-b-d&sa=X&ved=0CAQQ2J8EahcKEwjA0Myw9cD6AhUAAAAAHQAAAAAQAg&biw=2159&bih=1083",
+    "https://www.google.com/search?q=nicolas%20cage&tbm=isch&hl=en&tbs=ic:specific%2Cisc:orange&client=firefox-b-d&sa=X&ved=0CAUQ2J8EahcKEwjgtIqS9sD6AhUAAAAAHQAAAAAQAg&biw=2159&bih=1083",
+    "https://www.google.com/search?q=nicolas%20cage&tbm=isch&hl=en&tbs=ic:specific%2Cisc:yellow&client=firefox-b-d&sa=X&ved=0CAYQ2J8EahcKEwig7f2W9sD6AhUAAAAAHQAAAAAQAg&biw=2159&bih=1083",
+    "https://www.google.com/search?q=nicolas%20cage&tbm=isch&hl=en&tbs=ic:specific%2Cisc:green&client=firefox-b-d&sa=X&ved=0CAcQ2J8EahcKEwjYpaOE98D6AhUAAAAAHQAAAAAQAg&biw=2159&bih=1083",
+    "https://www.google.com/search?q=nicolas%20cage&tbm=isch&hl=en&tbs=ic:specific%2Cisc:teal&client=firefox-b-d&sa=X&ved=0CAgQ2J8EahcKEwiQw4mM98D6AhUAAAAAHQAAAAAQAg&biw=2159&bih=1083",
+    "https://www.google.com/search?q=nicolas%20cage&tbm=isch&hl=en&tbs=ic:specific%2Cisc:purple&client=firefox-b-d&sa=X&ved=0CAoQ2J8EahcKEwjwifaw98D6AhUAAAAAHQAAAAAQAg&biw=2159&bih=1083",
+    "https://www.google.com/search?q=nicolas%20cage&tbm=isch&hl=en&tbs=ic:specific%2Cisc:pink&client=firefox-b-d&sa=X&ved=0CAsQ2J8EahcKEwjojYjC98D6AhUAAAAAHQAAAAAQAg&biw=2159&bih=1083",
+    "https://www.google.com/search?q=nicolas%20cage&tbm=isch&hl=en&tbs=ic:specific%2Cisc:white&client=firefox-b-d&sa=X&ved=0CAwQ2J8EahcKEwjgp5DG98D6AhUAAAAAHQAAAAAQAg&biw=2159&bih=1083",
+    "https://www.google.com/search?q=nicolas%20cage&tbm=isch&hl=en&tbs=ic:specific%2Cisc:black&client=firefox-b-d&sa=X&ved=0CA4Q2J8EahcKEwiYjI_M98D6AhUAAAAAHQAAAAAQAg&biw=2159&bih=1083",
+    "https://www.google.com/search?q=nicolas%20cage&tbm=isch&hl=en&tbs=ic:specific%2Cisc:brown&client=firefox-b-d&sa=X&ved=0CA8Q2J8EahcKEwiY4OfP98D6AhUAAAAAHQAAAAAQAg&biw=2159&bih=1083"]
 
-    print([link for link in links])
 
-    for i, link in enumerate(links):
-        # exclude any src that starts with images/branding to avoid google branded content
-        if not link.startswith("/images/branding"):
-            urllib.request.urlretrieve(link, f"{image_path}/{i}.png")
+    #url = "https://www.google.com.au/search"
+    i = 0
+    for url in urls:
+        html = requests.get(url)
+        soup = BeautifulSoup(html.content, 'html.parser')
 
-            # open image in pillow and then append to a list
-            img = Image.open(f"{image_path}/{i}.png")
-            images.append(img)
+        image_tags = soup.find_all('img')
+        links = []
+        for image_tag in image_tags:
+            links.append(image_tag['src'])
+
+        print([link for link in links])
+
+        for link in links:
+            # exclude any src that starts with images/branding to avoid google branded content
+            if not link.startswith("/images/branding"):
+                urllib.request.urlretrieve(link, f"{image_path}/{i}.png")
+
+                # open image in pillow and then append to a list
+                img = Image.open(f"{image_path}/{i}.png")
+                images.append(img)
+
+                i+= 1
 
     return images
  
@@ -104,6 +121,7 @@ for frame in range(0, sample_image.n_frames):
     sample_image.seek(frame)
     sample_nicholas_frames.append(sample_image)
 
+
 # scrape images from google
 if scrape is True:
     images = scrape_images()
@@ -117,40 +135,43 @@ for file in os.listdir(image_path):
 #find all dominant colours for images and then append to tupled list:
 processed_images = find_colours(images)
 
-# just do one nicholas cage picture for now
-source = sample_nicholas_frames[0]
-width, height = source.size
-squares = (width // pixel_size_x, height // pixel_size_y)
-rows, collumns = squares[0], squares[1]
+new_frames = []
+for img in sample_nicholas_frames:
 
-prev_x, prev_y = 0, 0
-# create a blank canvas to use, that is the same resolution as the image used
-canvas = Image.new("RGB", (width, height), (0,0,0))
+    source = img
+    width, height = source.size
+    squares = (width // pixel_size_x, height // pixel_size_y)
+    rows, collumns = squares[0], squares[1]
 
-for collumn in range(collumns):
-    for row in range(rows):
-        
-        x, y = (pixel_size_x * (row+1)), (pixel_size_y * (collumn+1))
-        bbox = (prev_x, prev_y, x, y)
+    prev_x, prev_y = 0, 0
+    # create a blank canvas to use, that is the same resolution as the image used
+    canvas = Image.new("RGB", (width, height), (0,0,0))
 
-        dominant_colour = find_common_colour(sample_image=source, bbox=bbox)
+    for collumn in range(collumns):
+        for row in range(rows):
+            
+            x, y = (pixel_size_x * (row+1)), (pixel_size_y * (collumn+1))
+            bbox = (prev_x, prev_y, x, y)
 
-        # find most closest matching image to colour described:
-        close_color = closest_color(dominant_colour, processed_images)
-        for image, color in processed_images:
-            if close_color == color:
-                print("color found")
+            dominant_colour = find_common_colour(sample_image=img, bbox=bbox)
 
-                image.thumbnail((pixel_size_x, pixel_size_y))
-                image = image.convert("RGB")
-                canvas.paste(image, (prev_x, prev_y))
+            # find most closest matching image to colour described:
+            close_color = closest_color(dominant_colour, processed_images)
+            for image, color in processed_images:
+                if close_color == color:
 
-                break
+                    image.thumbnail((pixel_size_x, pixel_size_y))
+                    image = image.convert("RGB")
+                    canvas.paste(image, (prev_x, prev_y))
 
-        prev_x = x
+                    break
 
-    prev_x = 0
-    prev_y = y
+            prev_x = x
 
-sample_image.show()
-canvas.show()
+        prev_x = 0 
+        prev_y = y
+
+    new_frames.append(canvas)
+
+
+new_frames[0].save(f"result.gif", format="gif", save_all=True, append_images=new_frames[1:], duration=1, loop=0)
