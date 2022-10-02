@@ -1,3 +1,5 @@
+from concurrent.futures import process
+from ctypes import resize
 import os
 from random import sample
 import sys
@@ -9,8 +11,18 @@ from io import BytesIO
 from PIL import GifImagePlugin
 import urllib
 from colorthief import ColorThief
+from math import sqrt
 
 
+def closest_color(rgb, sample_images):
+    r, g, b = rgb
+    color_diffs = []
+    for image, color in sample_images:
+        cr, cg, cb = color
+        color_diff = sqrt((r - cr)**2 + (g - cg)**2 + (b - cb)**2)
+        color_diffs.append((color_diff, color))
+
+    return min(color_diffs)[1]
 
 
 def find_common_colour(sample_image, bbox, palette_size=16):
@@ -32,8 +44,6 @@ def find_common_colour(sample_image, bbox, palette_size=16):
     print(dominant_color)
 
     return dominant_color
-
-
 
 
 def scrape_images():
@@ -62,10 +72,25 @@ def scrape_images():
 
     return images
  
+def find_colours(images):
 
+    """
+    for the scraped images, find the most dominant colour and then append to a tuple list
+    """
+
+    processed_images = []
+    for image in images:
+        colour = find_common_colour(image, (0,0, image.width, image.height))
+        processed_images.append((image, colour))
+
+    return processed_images
+
+
+# variables to tweak before running script
 sample_image = Image.open(os.path.join(os.getcwd(), "sample.gif"))
-image_path = os.path.join(os.getcwd(), "nicholas_cage_pictures")
-scrape = False
+# path of images that will be used in collage
+image_path = os.path.join(os.getcwd(), "nicholas_cage_pictures") 
+scrape = False # choose whether or not to scrape images from google
 
 # size of bounding box to sample for given images
 pixel_size_x, pixel_size_y = (10,10) 
@@ -83,6 +108,15 @@ for frame in range(0, sample_image.n_frames):
 if scrape is True:
     images = scrape_images()
 
+images = []
+# find all images from target directory and open them in pillow
+for file in os.listdir(image_path):
+    opened_img = Image.open(os.path.join(image_path, file))
+    images.append(opened_img)
+
+#find all dominant colours for images and then append to tupled list:
+processed_images = find_colours(images)
+
 # just do one nicholas cage picture for now
 source = sample_nicholas_frames[0]
 width, height = source.size
@@ -90,6 +124,9 @@ squares = (width // pixel_size_x, height // pixel_size_y)
 rows, collumns = squares[0], squares[1]
 
 prev_x, prev_y = 0, 0
+# create a blank canvas to use, that is the same resolution as the image used
+canvas = Image.new("RGB", (width, height), (0,0,0))
+
 for collumn in range(collumns):
     for row in range(rows):
         
@@ -99,9 +136,21 @@ for collumn in range(collumns):
         dominant_colour = find_common_colour(sample_image=source, bbox=bbox)
 
         # find most closest matching image to colour described:
+        close_color = closest_color(dominant_colour, processed_images)
+        for image, color in processed_images:
+            if close_color == color:
+                print("color found")
 
+                image.thumbnail((pixel_size_x, pixel_size_y))
+                image = image.convert("RGB")
+                canvas.paste(image, (prev_x, prev_y))
+
+                break
 
         prev_x = x
 
     prev_x = 0
     prev_y = y
+
+sample_image.show()
+canvas.show()
