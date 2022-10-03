@@ -31,16 +31,14 @@ def find_common_colour(sample_image, bbox, palette_size=16):
     """
 
     #print(bbox)
-    img = sample_image.crop((bbox))
-    paletted = img.convert('P', palette=Image.ADAPTIVE, colors=palette_size)
+    new_frame = sample_image.crop((bbox))
+    paletted = new_frame.convert('P', palette=Image.ADAPTIVE, colors=palette_size)
 
     # Find the color that occurs most often
     palette = paletted.getpalette()
     color_counts = sorted(paletted.getcolors(), reverse=True)
     palette_index = color_counts[0][1]
     dominant_color = palette[palette_index*3:palette_index*3+3]
-
-    print(dominant_color)
 
     return dominant_color
 
@@ -69,7 +67,7 @@ def scrape_images():
         html = requests.get(url)
         soup = BeautifulSoup(html.content, 'html.parser')
 
-        image_tags = soup.find_all('img')
+        image_tags = soup.find_all('new_frame')
         links = []
         for image_tag in image_tags:
             links.append(image_tag['src'])
@@ -82,8 +80,8 @@ def scrape_images():
                 urllib.request.urlretrieve(link, f"{image_path}/{i}.png")
 
                 # open image in pillow and then append to a list
-                img = Image.open(f"{image_path}/{i}.png")
-                images.append(img)
+                new_frame = Image.open(f"{image_path}/{i}.png")
+                images.append(new_frame)
 
                 i+= 1
 
@@ -108,18 +106,14 @@ sample_image = Image.open(os.path.join(os.getcwd(), "sample.gif"))
 # path of images that will be used in collage
 image_path = os.path.join(os.getcwd(), "nicholas_cage_pictures") 
 scrape = False # choose whether or not to scrape images from google
+resize_value = 2 # if you want to resize the sample image to upscale it or not
+tile_size = 20 # the size of the collage pictures pasted onto sample image
 
 # size of bounding box to sample for given images
-pixel_size_x, pixel_size_y = (10,10) 
+pixel_size_x, pixel_size_y = (tile_size,tile_size) 
 
 if not os.path.exists(image_path):
     os.makedirs(image_path)
-
-# Retrieve frames from sample image and append them to a gif
-sample_nicholas_frames = []
-for frame in range(0, sample_image.n_frames):
-    sample_image.seek(frame)
-    sample_nicholas_frames.append(sample_image)
 
 
 # scrape images from google
@@ -129,17 +123,24 @@ if scrape is True:
 images = []
 # find all images from target directory and open them in pillow
 for file in os.listdir(image_path):
-    opened_img = Image.open(os.path.join(image_path, file))
-    images.append(opened_img)
+    opened_new_frame = Image.open(os.path.join(image_path, file))
+    images.append(opened_new_frame)
 
 #find all dominant colours for images and then append to tupled list:
 processed_images = find_colours(images)
 
 new_frames = []
-for img in sample_nicholas_frames:
+for frame_num in range(sample_image.n_frames):
 
-    source = img
-    width, height = source.size
+    sample_image.seek(frame_num)
+    new_frame = Image.new('RGBA',sample_image.size)
+    new_frame.paste(sample_image)
+
+    resize_x, resize_y = new_frame.size[0]*resize_value, new_frame.size[1]*resize_value
+    #print("before : ", new_frame.size)
+    new_frame = new_frame.resize((resize_x, resize_y), Image.BICUBIC)
+    width, height = new_frame.size
+    #print(" After : ", new_frame.size)
     squares = (width // pixel_size_x, height // pixel_size_y)
     rows, collumns = squares[0], squares[1]
 
@@ -153,7 +154,7 @@ for img in sample_nicholas_frames:
             x, y = (pixel_size_x * (row+1)), (pixel_size_y * (collumn+1))
             bbox = (prev_x, prev_y, x, y)
 
-            dominant_colour = find_common_colour(sample_image=img, bbox=bbox)
+            dominant_colour = find_common_colour(sample_image=new_frame, bbox=bbox)
 
             # find most closest matching image to colour described:
             close_color = closest_color(dominant_colour, processed_images)
@@ -172,6 +173,8 @@ for img in sample_nicholas_frames:
         prev_y = y
 
     new_frames.append(canvas)
+
+print(len(new_frames))
 
 
 new_frames[0].save(f"result.gif", format="gif", save_all=True, append_images=new_frames[1:], duration=1, loop=0)
